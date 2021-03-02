@@ -277,7 +277,8 @@ def main() :
             # particle
             # particle.render(display, (240, 120, 80), scroll)
             radius = 2 * 12
-            display.blit(lighting_surface(radius, (10, 10, 10)), ((particle.x - scroll[0] - radius), (particle.y - scroll[1] - radius)), special_flags=BLEND_RGB_ADD)
+            light_colors = [(5, 5, 5), (10, 10, 10), (20, 20, 20)]
+            display.blit(lighting_surface(radius, light_colors[random.randint(0, 2)]), ((particle.x - scroll[0] - radius), (particle.y - scroll[1] - radius)), special_flags=BLEND_RGB_ADD)
             particle.render(display, (255, 255, 255), scroll)
             if particle.disappear_timer < 1:
                 particles.remove(particle)
