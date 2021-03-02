@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, random
 
 clock = pygame.time.Clock()
 
@@ -38,7 +38,7 @@ def load_animation(path, frame_durations):
         animation_image = pygame.image.load(img_loc).convert()
         animation_image.set_colorkey((0, 0, 0))
         animation_frames[animation_frame_id] = animation_image.copy()
-        for i in range(frame):
+        for _ in range(frame):
             animation_frame_data.append(animation_frame_id)
         n += 1
     return animation_frame_data
@@ -73,6 +73,7 @@ player_rect = pygame.Rect(
 
 
 # terrian
+"""
 def load_map(path):
     with open(path, 'r') as f:
         data = f.read()
@@ -82,13 +83,40 @@ def load_map(path):
         for row in data:
             game_map.append(list(row))
     return game_map
+"""
+CHUNK_SIZE = 8
+def generate_chunk(x, y):
+    chunk_data = []
+    for y_pos in range(CHUNK_SIZE):
+        for x_pos in range(CHUNK_SIZE):
+            target_x = x * CHUNK_SIZE + x_pos
+            target_y = y * CHUNK_SIZE + y_pos
+            tile_type = 0
+            if target_y > 10:
+                tile_type = 1
+            elif target_y == 10:
+                tile_type = 2
+            elif target_y == 9:
+                if random.randint(1, 5) == 1:
+                    tile_type = 3
+            if tile_type != 0:
+                chunk_data.append([[target_x, target_y], tile_type])
+    return chunk_data
+# 
+game_map = {}
 
-game_map = load_map('map.txt')
+
+# game_map = load_map('map.txt')
 stone_block = pygame.image.load('assets/rock.png').convert()
 grass_block = pygame.image.load('assets/grass_rock.png').convert()
 grass = pygame.image.load('assets/grass.png').convert()
 grass.set_colorkey((0, 0, 0))
 TILE_SIZE = stone_block.get_width()
+tile_index = {
+    1: stone_block,
+    2: grass_block,
+    3: grass
+}
 
 # background
 ruins = pygame.image.load('assets/ruins.png').convert()
@@ -132,14 +160,14 @@ def move(rect, movement, tiles):
     return rect, collision_types
 
 
-
+# loop ----------------------------------------------------------------------------------------#
 while True:
     # display.fill((255, 255, 255))
     # display.fill((120, 240, 240))
     display.fill((90, 40, 90))
 
-    true_scroll[0] += (player_rect.x - scroll[0] - DISPLAY_SIZE[0]/2)/10 
-    true_scroll[1] += (player_rect.y - scroll[1] - DISPLAY_SIZE[1]/2)/10
+    true_scroll[0] += (player_rect.x - true_scroll[0] - DISPLAY_SIZE[0]/2)/10 
+    true_scroll[1] += (player_rect.y - true_scroll[1] - DISPLAY_SIZE[1]/2)/10
     scroll = true_scroll.copy()
     scroll[0] = int(scroll[0])
     scroll[1] = int(scroll[1])
@@ -149,6 +177,19 @@ while True:
         display.blit(ruins, ((background_object[1][0] - scroll[0])*background_object[0], (background_object[1][1] - scroll[1])*background_object[0]))
 
     tile_rects = []
+    for y in range(3):
+        for x in range(4):
+            # chunk location (x, y) (in chunk size)
+            target_x = x - 1 + int(round(scroll[0]/(CHUNK_SIZE*TILE_SIZE)))
+            target_y = y - 1 + int(round(scroll[1]/(CHUNK_SIZE*TILE_SIZE)))
+            target_chunk = str(target_x) + ';' + str(target_y)
+            if target_chunk not in game_map:
+                game_map[target_chunk] = generate_chunk(target_x, target_y)
+            for tile in game_map[target_chunk]:
+                display.blit(tile_index[tile[1]], (tile[0][0]*TILE_SIZE-scroll[0], tile[0][1]*TILE_SIZE-scroll[1]))
+                if tile[1] in [1, 2]:
+                    tile_rects.append(pygame.Rect(tile[0][0]*TILE_SIZE, tile[0][1]*TILE_SIZE, TILE_SIZE, TILE_SIZE))
+    """
     y = 0
     for row in game_map:
         x = 0
@@ -163,6 +204,7 @@ while True:
                 tile_rects.append(pygame.Rect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE))
             x += 1
         y += 1
+    """
 
     
     # display.blit(player_image, player_location)
